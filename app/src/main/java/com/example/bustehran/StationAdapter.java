@@ -13,6 +13,7 @@ import java.util.List;
 
 public class StationAdapter extends RecyclerView.Adapter<StationAdapter.StationViewHolder> {
     private List<Station> stations = new ArrayList<>();
+    private OnItemClickListener listener;
 
     @NonNull
     @Override
@@ -26,6 +27,12 @@ public class StationAdapter extends RecyclerView.Adapter<StationAdapter.StationV
     public void onBindViewHolder(@NonNull StationViewHolder holder, int position) {
         Station currentStation = stations.get(position);
         holder.textView.setText(currentStation.getTitle());
+
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null && position != RecyclerView.NO_POSITION) {
+                listener.onItemClick(currentStation);
+            }
+        });
     }
 
     @Override
@@ -36,6 +43,14 @@ public class StationAdapter extends RecyclerView.Adapter<StationAdapter.StationV
     public void setStations(List<Station> stations) {
         this.stations = stations;
         notifyDataSetChanged();
+    }
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.listener = listener;
+    }
+
+    public interface OnItemClickListener {
+        void onItemClick(Station station);
     }
 
     class StationViewHolder extends RecyclerView.ViewHolder {

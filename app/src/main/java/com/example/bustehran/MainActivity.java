@@ -1,5 +1,6 @@
 package com.example.bustehran;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,17 +12,33 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+    private StationViewModel stationViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // بارگذاری Fragment
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, new StationFragment())
-                    .commit();
-        }
+        RecyclerView recyclerView = findViewById(R.id.recycler_view);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setHasFixedSize(true);
+
+        StationAdapter adapter = new StationAdapter();
+        recyclerView.setAdapter(adapter);
+
+        stationViewModel = new ViewModelProvider(this).get(StationViewModel.class);
+        stationViewModel.getAllStations().observe(this, new Observer<List<Station>>() {
+            @Override
+            public void onChanged(List<Station> stations) {
+                adapter.setStations(stations);
+            }
+        });
+
+        // افزودن رویه کلیک به Adapter
+        adapter.setOnItemClickListener(station -> {
+            Intent intent = new Intent(MainActivity.this, StationDetailActivity.class);
+            intent.putExtra("stationId", station.id);
+            startActivity(intent);
+        });
     }
 }
