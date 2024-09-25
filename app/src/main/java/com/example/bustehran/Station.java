@@ -5,6 +5,8 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 @Entity(tableName = "Tbl_Stations")
 public class Station {
+
+
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "Id")
     public Integer id;
@@ -32,5 +34,12 @@ public class Station {
 
     public String getTitle() {
         return title; // Ensure this method is present
+    }
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 }

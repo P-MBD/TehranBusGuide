@@ -1,5 +1,7 @@
 package com.example.bustehran;
 
+import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,10 +30,14 @@ public class StationAdapter extends RecyclerView.Adapter<StationAdapter.StationV
         Station currentStation = stations.get(position);
         holder.textView.setText(currentStation.getTitle());
 
-        holder.itemView.setOnClickListener(v -> {
-            if (listener != null && position != RecyclerView.NO_POSITION) {
-                listener.onItemClick(currentStation);
-            }
+        // افزودن کلیک لیسنر برای هر آیتم
+        holder.itemView.setOnClickListener(view -> {
+            // گرفتن id ایستگاه فعلی و لاگ کردن آن
+            Log.d("StationAdapter", "Clicked station id: " + currentStation.id);
+            Intent intent = new Intent(view.getContext(), StationDetailActivity.class);
+            // استفاده از ثابت تعریف شده در MainActivity
+            intent.putExtra(MainActivity.EXTRA_STATION_ID, currentStation.id);// ارسال id ایستگاه به StationDetailActivity
+            view.getContext().startActivity(intent);
         });
     }
 

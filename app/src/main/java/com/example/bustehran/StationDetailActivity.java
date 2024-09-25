@@ -1,47 +1,56 @@
 package com.example.bustehran;
+
 import android.os.Bundle;
+import android.util.Log; // اضافه کردن لاگ
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager.widget.ViewPager;
 
 public class StationDetailActivity extends AppCompatActivity {
 
+    private static final String TAG = "StationDetailActivity"; // ثابت برای لاگ
     private ViewPager viewPager;
+    private StationPagerAdapter stationPagerAdapter;
+    private StationViewModel stationViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_station_detail);
 
-        viewPager = findViewById(R.id.viewPager);
-        StationDetailPagerAdapter adapter = new StationDetailPagerAdapter(getSupportFragmentManager());
-        viewPager.setAdapter(adapter);
-    }
+        // تعریف ViewPager
+        viewPager = findViewById(R.id.viewPager_station_detail);
 
-    private class StationDetailPagerAdapter extends FragmentPagerAdapter {
-        public StationDetailPagerAdapter(FragmentManager fm) {
-            super(fm);
+        // دریافت stationId از Intent
+        int stationId = getIntent().getIntExtra("station_id", -1);
+        Log.d(TAG, "Received stationId: " + stationId); // لاگ برای بررسی دریافت stationId
+
+        if (stationId == -1) {
+            Log.e(TAG, "Invalid stationId received"); // لاگ در صورت مشکل در stationId
+            return;
         }
 
-        @Override
-        public Fragment getItem(int position) {
-            switch (position) {
-                case 0:
-                    return new StationInfoFragment(); // اولین فرگمنت
-                case 1:
-                    return new StationScheduleFragment(); // فرگمنت دوم
-                case 2:
-                    return new StationMapFragment(); // فرگمنت سوم
-                default:
-                    return null;
+        // تنظیم ViewModel
+        stationViewModel = new ViewModelProvider(this).get(StationViewModel.class);
+
+        // مشاهده تغییرات ایستگاه در LiveData
+        stationViewModel.getStationById(stationId).observe(this, new Observer<Station>() {
+            @Override
+            public void onChanged(Station station) {
+
+                // دریافت stationId با استفاده از کلید مشترک
+                int stationId = getIntent().getIntExtra(MainActivity.EXTRA_STATION_ID, -1);
+
+                if (station != null) {
+                    Log.d(TAG, "Station loaded: " + station.getId() + " - " + station.getTitle()); // لاگ دریافت ایستگاه
+                    // تنظیم Adapter برای ViewPager پس از دریافت داده‌ها
+                    stationPagerAdapter = new StationPagerAdapter(getSupportFragmentManager(), station);
+                    viewPager.setAdapter(stationPagerAdapter);
+                } else {
+                    Log.d(TAG, "Received stationId: " + stationId);//لاگ در صورت عدم یافتن ایستگاه
+                }
             }
-        }
-
-        @Override
-        public int getCount() {
-            return 3; // تعداد فرگمنت‌ها
-        }
+        });
     }
 }

@@ -4,10 +4,10 @@
     android:layout_height="match_parent">
 
     <TextView
-        android:id="@+id/textView_station_info"
+        android:id="@+id/textView_information"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Station Information"
+        android:text="Station Details"
         android:textSize="18sp"
         android:layout_margin="16dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -25,6 +25,8 @@
         <!-- سایر فعالیت‌ها -->
         <activity android:name=".StationDetailActivity" />
 
+
+
     </application>
 
 </manifest>
