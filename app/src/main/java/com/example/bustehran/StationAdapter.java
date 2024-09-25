@@ -14,6 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StationAdapter extends RecyclerView.Adapter<StationAdapter.StationViewHolder> {
+    // تعریف ویوها
+    TextView titleTextView;
+    TextView addressTextView;
+    TextView lineTextView;
     private List<Station> stations = new ArrayList<>();
     private OnItemClickListener listener;
 
@@ -21,14 +25,17 @@ public class StationAdapter extends RecyclerView.Adapter<StationAdapter.StationV
     @Override
     public StationViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(android.R.layout.simple_list_item_1, parent, false);
+                .inflate(R.layout.station_item, parent, false);
         return new StationViewHolder(itemView);
     }
 
     @Override
     public void onBindViewHolder(@NonNull StationViewHolder holder, int position) {
         Station currentStation = stations.get(position);
-        holder.textView.setText(currentStation.getTitle());
+        // تنظیم مقدار TextViewها و سایر ویوها
+        holder.titleTextView.setText(currentStation.getTitle());
+        holder.addressTextView.setText(currentStation.getAddress());
+        holder.lineTextView.setText("Line: " + currentStation.getLine());
 
         // افزودن کلیک لیسنر برای هر آیتم
         holder.itemView.setOnClickListener(view -> {
@@ -60,11 +67,17 @@ public class StationAdapter extends RecyclerView.Adapter<StationAdapter.StationV
     }
 
     class StationViewHolder extends RecyclerView.ViewHolder {
-        private TextView textView;
+      // تعریف ویوها
+        TextView titleTextView;
+        TextView addressTextView;
+        TextView lineTextView;
 
         public StationViewHolder(View itemView) {
             super(itemView);
-            textView = itemView.findViewById(android.R.id.text1);
+            // مقداردهی ویوها
+            titleTextView = itemView.findViewById(R.id.text_view_title);
+            addressTextView = itemView.findViewById(R.id.text_view_address);
+            lineTextView = itemView.findViewById(R.id.text_view_line);
         }
     }
 }
