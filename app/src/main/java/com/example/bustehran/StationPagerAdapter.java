@@ -1,35 +1,45 @@
 package com.example.bustehran;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 
 public class StationPagerAdapter extends FragmentPagerAdapter {
+    private int stationId;
 
-    private Station station; // اضافه کردن Station
-
-    public StationPagerAdapter(FragmentManager fm, Station station) {
-        super(fm);
-        this.station = station;
+    public StationPagerAdapter(@NonNull FragmentManager fm, int stationId) {
+        super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
+        this.stationId = stationId;
     }
 
+    @NonNull
     @Override
     public Fragment getItem(int position) {
         switch (position) {
             case 0:
-                // ارسال اطلاعات ایستگاه به Fragment ها
-                return StationDetailFragment.newInstance(station.getId()); // فرگمنت اطلاعات ایستگاه
+                return StationInfoFragment.newInstance(stationId); // اطلاعات ایستگاه
             case 1:
-                return new StationInfoFragment(); // فرگمنت نمایش جزئیات اضافی
-            case 2:
-                return new StationMapFragment(); // فرگمنت نقشه
+                return StationTimesFragment.newInstance(stationId); // زمان‌بندی ایستگاه
             default:
-                return null;
+                return StationInfoFragment.newInstance(stationId);
         }
     }
 
     @Override
     public int getCount() {
-        return 3; // تعداد فرگمنت‌هایی که در ViewPager دارید
+        return 2; // دو تب داریم
+    }
+
+    @Override
+    public CharSequence getPageTitle(int position) {
+        switch (position) {
+            case 0:
+                return "Information";
+            case 1:
+                return "Times";
+            default:
+                return null;
+        }
     }
 }

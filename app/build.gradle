@@ -41,6 +41,8 @@ dependencies {
     annotationProcessor("androidx.room:room-compiler:2.5.2") // Room Compiler
     implementation "androidx.lifecycle:lifecycle-viewmodel:2.5.2"
     implementation "androidx.lifecycle:lifecycle-livedata:2.5.2"
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.viewpager:viewpager:1.0.0'
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
 }

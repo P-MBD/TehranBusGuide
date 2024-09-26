@@ -13,6 +13,12 @@ public class Station {
 
     @ColumnInfo(name = "Title")
     public String title;
+    // Default (empty) constructor required by Room
+    public Station() {
+    }
+
+    public Station(int stationId, String stationName, String stationDescription) {
+    }
 
     public void setTitle(String title) {
         this.title = title;
