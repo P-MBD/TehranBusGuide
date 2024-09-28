@@ -1,6 +1,5 @@
 package com.example.bustehran;
 
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -11,25 +10,27 @@ import android.widget.ProgressBar;
 
 import androidx.fragment.app.Fragment;
 
-
-import com.example.bustehran.Webervice.GetJson;
+import com.example.bustehran.ApiClient;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 public class StationMapFragment extends Fragment {
     private ListView lstData;
     private ProgressBar progressBar;
     private static final String ARG_STATION_ID = "station_id";
     private int stationId;
-    private static final String BASE_URL = "http://172.20.2.26:8000/api/stations/";
-
-    // برای مشخص کردن تگ لاگ‌ها
     private static final String TAG = "StationMapFragment";
+    private ApiClient apiClient;
 
     public static StationMapFragment newInstance(int stationId) {
         StationMapFragment fragment = new StationMapFragment();
@@ -46,6 +47,9 @@ public class StationMapFragment extends Fragment {
             stationId = getArguments().getInt(ARG_STATION_ID);
             Log.d(TAG, "Station ID: " + stationId); // لاگ برای بررسی مقدار Station ID
         }
+
+        // ایجاد شی از ApiClient
+        apiClient = new ApiClient();
     }
 
     @Override
@@ -54,71 +58,80 @@ public class StationMapFragment extends Fragment {
         lstData = rootView.findViewById(R.id.lst_data);
         progressBar = rootView.findViewById(R.id.progress);
 
-        Log.d(TAG, "Fetching station data..."); // لاگ برای آغاز واکشی داده‌ها
+        Log.d(TAG, "Fetching station data...");
 
         // آغاز واکشی ایستگاه‌ها
-        new FetchStationsTask().execute("http://172.20.2.26:8000/api/stations/");
+        fetchStations();
 
         return rootView;
     }
 
-    private class FetchStationsTask extends AsyncTask<String, Void, List<Station>> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            // نمایش ProgressBar قبل از آغاز واکشی
-            progressBar.setVisibility(View.VISIBLE);
-            Log.d(TAG, "Progress bar shown."); // لاگ برای نمایش ProgressBar
-        }
+    private void fetchStations() {
+        // نمایش ProgressBar قبل از آغاز واکشی
+        progressBar.setVisibility(View.VISIBLE);
+        Log.d(TAG, "Progress bar shown.");
 
-        @Override
-        protected List<Station> doInBackground(String... urls) {
-            Log.d(TAG, "Requesting data from URL: " + urls[0]); // لاگ برای URL درخواست
-            List<Station> stationsList = new ArrayList<>();
-            try {
-                GetJson getJson = new GetJson();
-                String result = getJson.jsonRequest(urls[0]);
-                Log.d(TAG, "Response received: " + result); // لاگ برای نتیجه JSON
+        apiClient.fetchStations(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                // مدیریت خطا
+                Log.e(TAG, "Error fetching data: " + e.getMessage());
+                e.printStackTrace();
+                // پنهان کردن ProgressBar در صورت بروز خطا
+                getActivity().runOnUiThread(() -> progressBar.setVisibility(View.INVISIBLE));
+            }
 
-                // پارس کردن JSON
-                JSONArray jsonArray = new JSONArray(result);
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    Station station = new Station();
-                    station.setEnglishTitle(jsonObject.getString("English_title"));
-                    station.setTitle(jsonObject.getString("Title"));
-                    station.setLine(Integer.parseInt(jsonObject.getString("Line")));
-                    station.setAddress(jsonObject.getString("Address"));
-                    station.setLat(jsonObject.getString("Lat"));
-                    station.setLang(jsonObject.getString("Lang")); // تغییر از Lane به Lang
-                    station.setDescription(jsonObject.getString("Description"));
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String result = response.body().string();
+                    Log.d(TAG, "Response received: " + result);
 
-                    stationsList.add(station);
-                    Log.d(TAG, "Station added: " + station.getTitle()); // لاگ برای هر ایستگاه اضافه شده
+                    List<Station> stationsList = parseJson(result);
+
+                    // بروزرسانی UI در ترد اصلی
+                    getActivity().runOnUiThread(() -> {
+                        progressBar.setVisibility(View.INVISIBLE);
+                        Log.d(TAG, "Progress bar hidden.");
+
+                        if (stationsList != null && !stationsList.isEmpty()) {
+                            StationsListAdapter adapter = new StationsListAdapter(getActivity(), R.layout.stations_row, new ArrayList<>(stationsList));
+                            lstData.setAdapter(adapter);
+                            Log.d(TAG, "Stations list updated with " + stationsList.size() + " items.");
+                        } else {
+                            Log.d(TAG, "No stations found.");
+                        }
+                    });
+                } else {
+                    Log.e(TAG, "Server returned an error: " + response.code());
+                    getActivity().runOnUiThread(() -> progressBar.setVisibility(View.INVISIBLE));
                 }
-            } catch (JSONException e) {
-                Log.e(TAG, "Error parsing JSON: " + e.getMessage()); // لاگ در صورت خطای JSON
-                e.printStackTrace();
-            } catch (Exception e) {
-                Log.e(TAG, "Error fetching data: " + e.getMessage()); // لاگ در صورت خطای دیگر
-                e.printStackTrace();
             }
-            return stationsList;
-        }
+        });
+    }
 
-        @Override
-        protected void onPostExecute(List<Station> stationsList) {
-            // پنهان کردن ProgressBar و به‌روزرسانی لیست
-            progressBar.setVisibility(View.INVISIBLE);
-            Log.d(TAG, "Progress bar hidden."); // لاگ برای پنهان شدن ProgressBar
+    private List<Station> parseJson(String jsonResponse) {
+        List<Station> stationsList = new ArrayList<>();
+        try {
+            JSONArray jsonArray = new JSONArray(jsonResponse);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                Station station = new Station();
+                station.setEnglishTitle(jsonObject.getString("English_title"));
+                station.setTitle(jsonObject.getString("Title"));
+                station.setLine(Integer.parseInt(jsonObject.getString("Line")));
+                station.setAddress(jsonObject.getString("Address"));
+                station.setLat(jsonObject.getString("Lat"));
+                station.setLang(jsonObject.getString("Lang"));
+                station.setDescription(jsonObject.getString("Description"));
 
-            if (stationsList != null && !stationsList.isEmpty()) {
-                StationsListAdapter adapter = new StationsListAdapter(getActivity(), R.layout.stations_row, new ArrayList<>(stationsList));
-                lstData.setAdapter(adapter);
-                Log.d(TAG, "Stations list updated with " + stationsList.size() + " items."); // لاگ برای به‌روزرسانی لیست
-            } else {
-                Log.d(TAG, "No stations found."); // لاگ در صورتی که لیستی پیدا نشود
+                stationsList.add(station);
+                Log.d(TAG, "Station added: " + station.getTitle());
             }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing JSON: " + e.getMessage());
+            e.printStackTrace();
         }
+        return stationsList;
     }
 }
