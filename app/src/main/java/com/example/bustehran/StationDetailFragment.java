@@ -10,8 +10,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-public class StationDetailFragment extends Fragment {
 
+import com.example.bustehran.Webervice.GetJson;
+
+import java.io.IOException;
+
+public class StationDetailFragment extends Fragment {
+    private GetJson getJson = new GetJson();
     private static final String ARG_STATION_ID = "stationId";
     private int stationId;
 
@@ -34,7 +39,22 @@ public class StationDetailFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_station_detail, container, false);
+        View view = inflater.inflate(R.layout.fragment_station_detail, container, false);
+
+        // Fetch data from the database or API
+        fetchStationDetails();
+
+        return view;
+    }
+
+    private void fetchStationDetails() {
+        String url = "YOUR_API_URL_HERE"; // URL وب سرویس خود را وارد کنید
+
+        try {
+            String result = getJson.jsonRequest(url);
+            // پردازش داده‌های JSON
+        } catch (IOException e) {
+            Log.e("StationDetailFragment", "Error fetching data: " + e.getMessage());
+        }
     }
 }

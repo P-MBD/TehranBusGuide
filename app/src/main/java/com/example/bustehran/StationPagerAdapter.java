@@ -21,6 +21,8 @@ public class StationPagerAdapter extends FragmentPagerAdapter {
                 return StationInfoFragment.newInstance(stationId); // اطلاعات ایستگاه
             case 1:
                 return StationTimesFragment.newInstance(stationId); // زمان‌بندی ایستگاه
+            case 2:
+                return StationMapFragment.newInstance(stationId);
             default:
                 return StationInfoFragment.newInstance(stationId);
         }
@@ -28,7 +30,7 @@ public class StationPagerAdapter extends FragmentPagerAdapter {
 
     @Override
     public int getCount() {
-        return 2; // دو تب داریم
+        return 3; // دو تب داریم
     }
 
     @Override
@@ -38,6 +40,8 @@ public class StationPagerAdapter extends FragmentPagerAdapter {
                 return "Information";
             case 1:
                 return "Times";
+            case 2:
+                return "WS";
             default:
                 return null;
         }
