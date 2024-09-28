@@ -1,28 +1,19 @@
 package com.example.bustehran;
 
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ApiClient {
-    private static final String BASE_URL = "http://172.20.2.26:8000/api/stations/";
-    private OkHttpClient client;
+    private static final String BASE_URL = "http://172.20.2.26:8000/api/";
+    private static Retrofit retrofit;
 
-    public ApiClient() {
-        // ساخت یک شی از OkHttpClient
-        client = new OkHttpClient();
-    }
-
-    // متد برای واکشی ایستگاه‌ها از API
-    public void fetchStations(Callback callback) {
-        // ایجاد درخواست HTTP
-        Request request = new Request.Builder()
-                .url(BASE_URL)
-                .build();
-
-        // اجرای درخواست به صورت ناهمگام
-        Call call = client.newCall(request);
-        call.enqueue(callback); // اجرای درخواست با callback برای مدیریت پاسخ‌ها
+    public static Retrofit getRetrofitInstance() {
+        if (retrofit == null) {
+            retrofit = new Retrofit.Builder()
+                    .baseUrl(BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+        }
+        return retrofit;
     }
 }

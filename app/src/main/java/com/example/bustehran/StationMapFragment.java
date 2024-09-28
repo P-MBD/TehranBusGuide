@@ -5,32 +5,28 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ListView;
 import android.widget.ProgressBar;
 
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.bustehran.ApiClient;
+import com.google.gson.Gson;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.Response;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class StationMapFragment extends Fragment {
-    private ListView lstData;
+    private RecyclerView recyclerView;
     private ProgressBar progressBar;
-    private static final String ARG_STATION_ID = "station_id";
-    private int stationId;
+    private StationsListAdapter adapter;
     private static final String TAG = "StationMapFragment";
-    private ApiClient apiClient;
+    private static final String ARG_STATION_ID = "stationId";
 
     public static StationMapFragment newInstance(int stationId) {
         StationMapFragment fragment = new StationMapFragment();
@@ -41,97 +37,82 @@ public class StationMapFragment extends Fragment {
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            stationId = getArguments().getInt(ARG_STATION_ID);
-            Log.d(TAG, "Station ID: " + stationId); // لاگ برای بررسی مقدار Station ID
+            int stationId = getArguments().getInt(ARG_STATION_ID, -1);
+            Log.d(TAG, "Station ID received: " + stationId);
+        } else {
+            Log.d(TAG, "No Station ID received");
         }
-
-        // ایجاد شی از ApiClient
-        apiClient = new ApiClient();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        Log.d(TAG, "onCreateView started");
         View rootView = inflater.inflate(R.layout.fragment_station_map, container, false);
-        lstData = rootView.findViewById(R.id.lst_data);
+
+        // مقداردهی RecyclerView
+        recyclerView = rootView.findViewById(R.id.recycler_view);
         progressBar = rootView.findViewById(R.id.progress);
 
-        Log.d(TAG, "Fetching station data...");
+        // تنظیم LayoutManager
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // آغاز واکشی ایستگاه‌ها
+        // تنظیم آداپتور با لیست خالی
+        adapter = new StationsListAdapter(getContext(), new ArrayList<>());
+        recyclerView.setAdapter(adapter);
+
+        // تنظیم LayoutManager برای RecyclerView
+
+
+        Log.d(TAG, "Fetching station data...");
         fetchStations();
 
         return rootView;
     }
 
-    private void fetchStations() {
-        // نمایش ProgressBar قبل از آغاز واکشی
-        progressBar.setVisibility(View.VISIBLE);
-        Log.d(TAG, "Progress bar shown.");
+    @Override
+    public void onResume() {
+        super.onResume();
+        Log.d(TAG, "Fragment resumed");
+    }
 
-        apiClient.fetchStations(new Callback() {
+    private void fetchStations() {
+        ApiService apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
+        Call<List<Station>> call = apiService.getStations();
+        progressBar.setVisibility(View.VISIBLE);
+
+        call.enqueue(new Callback<List<Station>>() {
             @Override
-            public void onFailure(Call call, IOException e) {
-                // مدیریت خطا
-                Log.e(TAG, "Error fetching data: " + e.getMessage());
-                e.printStackTrace();
-                // پنهان کردن ProgressBar در صورت بروز خطا
-                getActivity().runOnUiThread(() -> progressBar.setVisibility(View.INVISIBLE));
+            public void onResponse(Call<List<Station>> call, Response<List<Station>> response) {
+                progressBar.setVisibility(View.INVISIBLE);
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Station> stationsList = response.body();
+                    Log.d(TAG, "API Response: " + new Gson().toJson(response.body()));
+                    // لاگ کردن آیتم‌ها برای اشکال‌زدایی
+                    for (int i = 0; i < stationsList.size(); i++) {
+                        Station station = stationsList.get(i);
+                        Log.d(TAG, "Station " + i + ": ID=" + station.getId() + ", Title=" + station.getTitle() + ", Address=" + station.getAddress());
+                    }
+
+                    // تنظیم آداپتور
+                    StationsListAdapter adapter = new StationsListAdapter(getActivity(), new ArrayList<>(stationsList));
+                    recyclerView.setAdapter(adapter);
+
+                    Log.d(TAG, "Stations list updated with " + stationsList.size() + " items.");
+                    Log.d(TAG, "Adapter item count: " + adapter.getItemCount());
+                } else {
+                    Log.d(TAG, "No stations found or empty response.");
+                }
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    String result = response.body().string();
-                    Log.d(TAG, "Response received: " + result);
-
-                    List<Station> stationsList = parseJson(result);
-
-                    // بروزرسانی UI در ترد اصلی
-                    getActivity().runOnUiThread(() -> {
-                        progressBar.setVisibility(View.INVISIBLE);
-                        Log.d(TAG, "Progress bar hidden.");
-
-                        if (stationsList != null && !stationsList.isEmpty()) {
-                            StationsListAdapter adapter = new StationsListAdapter(getActivity(), R.layout.stations_row, new ArrayList<>(stationsList));
-                            lstData.setAdapter(adapter);
-                            Log.d(TAG, "Stations list updated with " + stationsList.size() + " items.");
-                        } else {
-                            Log.d(TAG, "No stations found.");
-                        }
-                    });
-                } else {
-                    Log.e(TAG, "Server returned an error: " + response.code());
-                    getActivity().runOnUiThread(() -> progressBar.setVisibility(View.INVISIBLE));
-                }
+            public void onFailure(Call<List<Station>> call, Throwable t) {
+                progressBar.setVisibility(View.INVISIBLE);
+                Log.e(TAG, "Error fetching data: " + t.getMessage());
             }
         });
     }
 
-    private List<Station> parseJson(String jsonResponse) {
-        List<Station> stationsList = new ArrayList<>();
-        try {
-            JSONArray jsonArray = new JSONArray(jsonResponse);
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject jsonObject = jsonArray.getJSONObject(i);
-                Station station = new Station();
-                station.setEnglishTitle(jsonObject.getString("English_title"));
-                station.setTitle(jsonObject.getString("Title"));
-                station.setLine(Integer.parseInt(jsonObject.getString("Line")));
-                station.setAddress(jsonObject.getString("Address"));
-                station.setLat(jsonObject.getString("Lat"));
-                station.setLang(jsonObject.getString("Lang"));
-                station.setDescription(jsonObject.getString("Description"));
-
-                stationsList.add(station);
-                Log.d(TAG, "Station added: " + station.getTitle());
-            }
-        } catch (JSONException e) {
-            Log.e(TAG, "Error parsing JSON: " + e.getMessage());
-            e.printStackTrace();
-        }
-        return stationsList;
-    }
 }

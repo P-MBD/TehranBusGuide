@@ -3,14 +3,23 @@ package com.example.bustehran;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+
+import com.google.gson.annotations.SerializedName;
+
 @Entity(tableName = "Tbl_Stations")
 public class Station {
-
+    public Station(Integer id, String title, String description) {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+    }
 
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "Id")
+    @SerializedName("id")
     public Integer id;
 
+    @SerializedName("Title")
     @ColumnInfo(name = "Title")
     public String title;
     // Default (empty) constructor required by Room
@@ -71,22 +80,22 @@ public class Station {
     public void setDescription(String description) {
         this.description = description;
     }
-
+    @SerializedName("EnglishTitle")
     @ColumnInfo(name = "EnglishTitle")
     public String englishTitle;
-
+    @SerializedName("Line")
     @ColumnInfo(name = "Line")
     public Integer line; // Ensure this is an Integer, not an int
-
+    @SerializedName("Address")
     @ColumnInfo(name = "Address")
     public String address;
-
+    @SerializedName("Lat")
     @ColumnInfo(name = "Lat")
     public String lat;
-
+    @SerializedName("Lang")
     @ColumnInfo(name = "Lang")
     public String lang;
-
+    @SerializedName("Description")
     @ColumnInfo(name = "Description")
     public String description;
 
